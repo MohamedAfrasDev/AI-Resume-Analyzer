@@ -1,31 +1,38 @@
 import type { PdfConversionResult } from "~/types/PdfConversionResult";
 
-let pdfjsLib: any = null;
+// pdfjs-dist v5: import from the package root (not /build/pdf subpath)
+// The worker URL is resolved via Vite's ?url import so no manual file copying
+// is needed and the path survives hashing / base-URL changes at build time.
+import * as pdfjsLib from "pdfjs-dist";
+import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-export async function loadPdfJs(): Promise<any> {
-    if (pdfjsLib) return pdfjsLib;
+let workerConfigured = false;
 
-    const lib = await import("pdfjs-dist/build/pdf"); // browser build
-    lib.GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.min.js`;
-    pdfjsLib = lib;
-    return lib;
+function ensureWorker() {
+    if (!workerConfigured) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+        workerConfigured = true;
+    }
 }
 
 export async function convertPdfToImage(file: File): Promise<PdfConversionResult> {
     try {
-        const lib = await loadPdfJs();
+        ensureWorker();
+
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const page = await pdf.getPage(1);
 
         const viewport = page.getViewport({ scale: 1.5 });
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
-        if (!context) throw new Error("Failed to get 2D context");
+        if (!context) throw new Error("Failed to get 2D canvas context");
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
+
+        // pdfjs-dist v5 requires `canvas` alongside `canvasContext`
+        await page.render({ canvasContext: context, canvas, viewport }).promise;
 
         return new Promise((resolve) => {
             canvas.toBlob((blob) => {
@@ -39,6 +46,10 @@ export async function convertPdfToImage(file: File): Promise<PdfConversionResult
             }, "image/png");
         });
     } catch (err) {
-        return { imageUrl: "", file: null, error: `Failed to convert PDF: ${err instanceof Error ? err.message : err}` };
+        return {
+            imageUrl: "",
+            file: null,
+            error: `Failed to convert PDF: ${err instanceof Error ? err.message : String(err)}`,
+        };
     }
 }
