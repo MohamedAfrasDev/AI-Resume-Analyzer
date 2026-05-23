@@ -334,27 +334,26 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             return;
         }
 
-        // We tried three approaches that all returned HTTP 400 from Puter's API:
-        //   1. type:"file" + puter_path  (Puter file-reference format)
-        //   2. type:"image_url" + base64 data URL inside a ChatMessage[]
-        //   3. type:"image_url" + base64 inside a structured messages array
+        // History of attempts that all returned HTTP 400:
+        //   • { model: "claude-3-7-sonnet" } — alias not registered in Puter
+        //   • { model: "claude-3-5-sonnet" } — Claude requires a linked
+        //     Anthropic API key in the user's Puter account settings;
+        //     Puter rejects the request with 400 if the key is absent.
         //
-        // Root cause: Puter's /drivers/call endpoint rejects structured
-        // ChatMessage[] payloads on the free tier for Claude models.
-        //
-        // Solution: send a single plain-string prompt.
-        //   • puter.ai.chat(string, options) is the simplest supported call.
-        //   • The resume text (extracted from the PDF by pdfjs-dist) is embedded
-        //     directly in the prompt string, so Claude receives the actual
-        //     characters from every page — better than reading from a screenshot.
+        // Fix: omit the model argument entirely.
+        //   Puter falls back to its built-in default (typically gpt-4o-mini),
+        //   which is available to every free account with no extra setup.
+        //   The prompt already instructs the model to return strict JSON so
+        //   the output format works regardless of which LLM answers.
         try {
             const prompt = `${message}\n\n---\nRESUME CONTENT:\n${resumeContent}`;
 
-            return await puter.ai.chat(
-                prompt,
-                { model: "claude-3-5-sonnet" }
-            ) as Promise<AIResponse | undefined>;
+            // No model specified → Puter uses its account-level default.
+            return await puter.ai.chat(prompt) as Promise<AIResponse | undefined>;
         } catch (err) {
+            // Log the raw error so the actual Puter message is visible in the
+            // browser console, then surface a clean message to the UI.
+            console.error("[Puter AI] feedback() failed:", err);
             const msg = err instanceof Error ? err.message : String(err);
             throw new Error(`Puter AI error: ${msg}`);
         }
