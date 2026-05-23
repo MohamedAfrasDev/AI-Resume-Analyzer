@@ -6,7 +6,8 @@ import ScoreBadge from './ScoreBadge';
 
 const Category = ({title,score} : {title: string, score: number}) => {
 
-    const textColor = score > 70 ? 'text-green-600'
+    // Threshold matches ScoreBadge: >69 = green, >49 = yellow, else red
+    const textColor = score > 69 ? 'text-green-600'
         : score > 49 ? 'text-yellow-600' : 'text-red-600';
     return (
         <div className="resume-summary">

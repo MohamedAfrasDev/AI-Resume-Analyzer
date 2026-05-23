@@ -1,4 +1,10 @@
+import { useId } from 'react';
+
 const ScoreCircle = ({ score = 75 }: { score: number }) => {
+    // useId gives a unique ID per component instance, preventing duplicate SVG
+    // gradient IDs when multiple ScoreCircle components appear on the same page.
+    const gradientId = useId();
+
     const radius = 40;
     const stroke = 8;
     const normalizedRadius = radius - stroke / 2;
@@ -14,6 +20,12 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
                 viewBox="0 0 100 100"
                 className="transform -rotate-90"
             >
+                <defs>
+                    <linearGradient id={gradientId} x1="1" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#FF97AD" />
+                        <stop offset="100%" stopColor="#5171FF" />
+                    </linearGradient>
+                </defs>
                 {/* Background circle */}
                 <circle
                     cx="50"
@@ -23,18 +35,12 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
                     strokeWidth={stroke}
                     fill="transparent"
                 />
-                {/* Partial circle with gradient */}
-                <defs>
-                    <linearGradient id="grad" x1="1" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#FF97AD" />
-                        <stop offset="100%" stopColor="#5171FF" />
-                    </linearGradient>
-                </defs>
+                {/* Progress circle */}
                 <circle
                     cx="50"
                     cy="50"
                     r={normalizedRadius}
-                    stroke="url(#grad)"
+                    stroke={`url(#${gradientId})`}
                     strokeWidth={stroke}
                     fill="transparent"
                     strokeDasharray={circumference}
@@ -43,7 +49,7 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
                 />
             </svg>
 
-            {/* Score and issues */}
+            {/* Score label */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="font-semibold text-sm">{`${score}/100`}</span>
             </div>

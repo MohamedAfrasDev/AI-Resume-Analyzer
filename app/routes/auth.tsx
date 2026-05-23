@@ -1,24 +1,28 @@
-import React, {useEffect} from 'react'
+import React, { useEffect } from 'react'
 
 import { usePuterStore } from "~/lib/puter";
-import {useLocation, useNavigate} from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 export const meta = () => ([
-    {title: "Resumind | Auth"},
-    {name: 'desctiption',content: 'Log into your account'}
+    { title: "Resumind | Auth" },
+    { name: 'description', content: 'Log into your account' },
 ])
 
 const Auth = () => {
 
     const { isLoading, auth } = usePuterStore();
     const location = useLocation();
-    const next = location.search.split('next=')[1];
     const navigate = useNavigate();
 
+    // Safely extract and validate the `next` redirect — must be a relative path
+    // to prevent open-redirect attacks (e.g. /auth?next=https://evil.com)
+    const rawNext = new URLSearchParams(location.search).get('next') || '/';
+    const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 
     useEffect(() => {
-        if(auth.isAuthenticated) navigate(next);
-    },[auth.isAuthenticated, next])
+        if (auth.isAuthenticated) navigate(next);
+    }, [auth.isAuthenticated, next])
+
     return (
         <main className="bg-[url('/images/bg-auth.svg')] bg-cover min-h-screen flex items-center justify-center">
 
@@ -41,7 +45,7 @@ const Auth = () => {
                                     <button className="auth-button" onClick={auth.signOut}>
                                         <p>Log Out</p>
                                     </button>
-                                ):(
+                                ) : (
                                     <button className="auth-button" onClick={auth.signIn}>
                                         <p>Log in</p>
                                     </button>
