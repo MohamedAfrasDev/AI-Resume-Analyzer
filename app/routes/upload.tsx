@@ -68,8 +68,10 @@ const Upload = () => {
             await kv.set(`resume:${uuid}`, JSON.stringify(data));
 
             setStatusText('Analyzing...');
+            // Pass the PNG thumbnail path — feedback() reads it back from
+            // Puter FS and sends it as a base64 image_url to the AI.
             const feedback = await ai.feedback(
-                uploadedFile.path,
+                uploadedImage.path,
                 prepareInstructions({ jobTitle, jobDescription })
             );
             if (!feedback) {

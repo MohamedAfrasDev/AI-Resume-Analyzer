@@ -327,25 +327,40 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         >;
     };
 
-    const feedback = async (path: string, message: string) => {
+    const feedback = async (imagePath: string, message: string) => {
         const puter = getPuter();
         if (!puter) {
             setError("Puter.js not available");
             return;
         }
 
-        // "claude-3-5-sonnet" is the alias Puter's AI router recognises.
-        // "claude-3-7-sonnet" was returning 400 because that alias is either
-        // not registered or not available on the free tier.
+        // Strategy: read the PNG thumbnail we already uploaded to Puter FS,
+        // convert it to a base64 data URL, and send it as an image_url content
+        // block — a format all Claude models support natively.
+        //
+        // We tried type:"file"+puter_path (Puter's own file-reference format)
+        // but it consistently returns HTTP 400 for PDFs on the free tier.
+        // Sending a base64 PNG avoids all server-side path resolution and works
+        // reliably with the OpenAI-compatible message format Puter exposes.
         try {
+            const blob = await puter.fs.read(imagePath);
+
+            // Convert Blob → base64 data URL via FileReader
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(blob);
+            });
+
             return await puter.ai.chat(
                 [
                     {
                         role: "user",
                         content: [
                             {
-                                type: "file",
-                                puter_path: path,
+                                type: "image_url",
+                                image_url: { url: dataUrl },
                             },
                             {
                                 type: "text",
@@ -357,8 +372,6 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                 { model: "claude-3-5-sonnet" }
             ) as Promise<AIResponse | undefined>;
         } catch (err) {
-            // Surface the real error (e.g. "model not found", quota exceeded)
-            // so it appears in the upload page status text instead of a generic failure.
             const msg = err instanceof Error ? err.message : String(err);
             throw new Error(`Puter AI error: ${msg}`);
         }
