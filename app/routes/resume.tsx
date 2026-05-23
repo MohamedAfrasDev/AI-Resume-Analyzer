@@ -69,7 +69,7 @@ const Resume = () => {
         <main className="!pt-0">
             <nav className="resume-nav">
                 <Link to="/" className="back--button">
-                    <img src="/icons/back.svg" alt="logo" className="w-2.5 h-2.5" />
+                    <img src={`${import.meta.env.BASE_URL}icons/back.svg`} alt="back" className="w-2.5 h-2.5" />
                     <span className="text-gray-800 text-sm font-semibold">Back to Homepage</span>
                 </Link>
             </nav>
@@ -103,7 +103,7 @@ const Resume = () => {
 
                         </div>
                     ) : (
-                        <img src="/images/resume-scan.gif" className="w-full" alt="Scanning resume..." />
+                        <img src={`${import.meta.env.BASE_URL}images/resume-scan.gif`} className="w-full" alt="Scanning resume..." />
                     )}
                 </section>
             </div>

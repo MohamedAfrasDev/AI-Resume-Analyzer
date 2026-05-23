@@ -6,6 +6,8 @@ import {
     AccordionItem,
 } from "../components/Accordion";
 
+const BASE = import.meta.env.BASE_URL; // always ends with "/"
+
 const ScoreBadge = ({ score }: { score: number }) => {
     return (
         <div
@@ -19,7 +21,7 @@ const ScoreBadge = ({ score }: { score: number }) => {
             )}
         >
             <img
-                src={score > 69 ? `${import.meta.env.BASE_URL}/icons/check.svg` : `${import.meta.env.BASE_URL}/icons/warning.svg`}
+                src={score > 69 ? `${BASE}icons/check.svg` : `${BASE}icons/warning.svg`}
                 alt="score"
                 className="size-4"
             />
@@ -40,9 +42,9 @@ const ScoreBadge = ({ score }: { score: number }) => {
 };
 
 const CategoryHeader = ({
-                            title,
-                            categoryScore,
-                        }: {
+    title,
+    categoryScore,
+}: {
     title: string;
     categoryScore: number;
 }) => {
@@ -55,8 +57,8 @@ const CategoryHeader = ({
 };
 
 const CategoryContent = ({
-                             tips,
-                         }: {
+    tips,
+}: {
     tips: { type: "good" | "improve"; tip: string; explanation: string }[];
 }) => {
     return (
@@ -66,12 +68,14 @@ const CategoryContent = ({
                     <div className="flex flex-row gap-2 items-center" key={index}>
                         <img
                             src={
-                                tip.type === "good" ? `${import.meta.env.BASE_URL}/icons/check.svg` : `${import.meta.env.BASE_URL}/icons/warning.svg`
+                                tip.type === "good"
+                                    ? `${BASE}icons/check.svg`
+                                    : `${BASE}icons/warning.svg`
                             }
                             alt="score"
                             className="size-5"
                         />
-                        <p className="text-xl text-gray-500 ">{tip.tip}</p>
+                        <p className="text-xl text-gray-500">{tip.tip}</p>
                     </div>
                 ))}
             </div>
@@ -90,8 +94,8 @@ const CategoryContent = ({
                             <img
                                 src={
                                     tip.type === "good"
-                                        ? `${import.meta.env.BASE_URL}/icons/check.svg`
-                                        : `${import.meta.env.BASE_URL}/icons/warning.svg`
+                                        ? `${BASE}icons/check.svg`
+                                        : `${BASE}icons/warning.svg`
                                 }
                                 alt="score"
                                 className="size-5"

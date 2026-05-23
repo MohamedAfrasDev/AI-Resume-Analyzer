@@ -68,7 +68,7 @@ export default function Home() {
 
         {loadingResumes && (
           <div className="flex flex-col items-center justify-center">
-            <img src={`${import.meta.env.BASE_URL}/images/resume-scan-2.gif`} className="w-[200px]" alt="Loading..." />
+            <img src={`${import.meta.env.BASE_URL}images/resume-scan-2.gif`} className="w-[200px]" alt="Loading..." />
           </div>
         )}
 

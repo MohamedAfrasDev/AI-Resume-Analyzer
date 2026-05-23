@@ -1,9 +1,11 @@
 import { cn } from "~/lib/utils";
 
+const BASE = import.meta.env.BASE_URL; // always ends with "/"
+
 const ATS = ({
-                 score,
-                 suggestions,
-             }: {
+    score,
+    suggestions,
+}: {
     score: number;
     suggestions: { type: "good" | "improve"; tip: string }[];
 }) => {
@@ -22,10 +24,10 @@ const ATS = ({
                 <img
                     src={
                         score > 69
-                            ? `${import.meta.env.BASE_URL}/icons/ats-good.svg`
+                            ? `${BASE}icons/ats-good.svg`
                             : score > 49
-                                ? `${import.meta.env.BASE_URL}/icons/ats-warning.svg`
-                                : `${import.meta.env.BASE_URL}/icons/ats-bad.svg`
+                                ? `${BASE}icons/ats-warning.svg`
+                                : `${BASE}icons/ats-bad.svg`
                     }
                     alt="ATS"
                     className="w-10 h-10"
@@ -45,8 +47,8 @@ const ATS = ({
                         <img
                             src={
                                 suggestion.type === "good"
-                                    ? `${import.meta.env.BASE_URL}/icons/check.svg`
-                                    : `${import.meta.env.BASE_URL}/icons/warning.svg`
+                                    ? `${BASE}icons/check.svg`
+                                    : `${BASE}icons/warning.svg`
                             }
                             alt="ATS"
                             className="w-4 h-4"

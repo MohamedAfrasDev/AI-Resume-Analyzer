@@ -3,20 +3,21 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-// defineConfig receives isSsrBuild so we can apply manualChunks only to the
-// client bundle. In SPA mode (ssr: false) the SSR bundle is discarded anyway,
-// but Rollup still runs it and treats pdfjs-dist as external there — so
-// manualChunks must be skipped for that pass.
+// Base URL is configurable so the same codebase can be deployed anywhere:
+//   Vercel / Docker → leave VITE_BASE_URL unset → defaults to "/"
+//   GitHub Pages   → set VITE_BASE_URL=/AI-Resume-Analyzer/ in the CI env
+const base = process.env.VITE_BASE_URL ?? "/";
+
 export default defineConfig(({ isSsrBuild }) => ({
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
-  base: '/AI-Resume-Analyzer/',
+  base,
   build: {
     rollupOptions: {
       output: isSsrBuild
         ? {}
         : {
-            // Keep pdfjs-dist in its own chunk so it's only fetched on the
-            // /upload route, not on every page load.
+            // Keep pdfjs in its own chunk so it is only fetched on /upload,
+            // not on every page load.
             manualChunks: {
               pdfjs: ["pdfjs-dist"],
             },

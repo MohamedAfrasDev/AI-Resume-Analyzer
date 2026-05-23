@@ -53,7 +53,7 @@ const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
                     ) : (
                         <div>
                             <div className="mx-auto w-16 h-16 flex items-center justify-center mb-2">
-                                <img src={`${import.meta.env.BASE_URL}/icons/info.svg`} alt="upload" className="size-20" />
+                                <img src={`${import.meta.env.BASE_URL}icons/info.svg`} alt="upload" className="size-20" />
                             </div>
                             <p className="text-lg text-gray-500">
                                 <span className="font-semibold">
