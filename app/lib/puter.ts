@@ -73,7 +73,7 @@ interface PuterStore {
             options?: PuterChatOptions
         ) => Promise<AIResponse | undefined>;
         feedback: (
-            path: string,
+            resumeContent: string,
             message: string
         ) => Promise<AIResponse | undefined>;
         img2txt: (
@@ -327,48 +327,31 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         >;
     };
 
-    const feedback = async (imagePath: string, message: string) => {
+    const feedback = async (resumeContent: string, message: string) => {
         const puter = getPuter();
         if (!puter) {
             setError("Puter.js not available");
             return;
         }
 
-        // Strategy: read the PNG thumbnail we already uploaded to Puter FS,
-        // convert it to a base64 data URL, and send it as an image_url content
-        // block — a format all Claude models support natively.
+        // We tried three approaches that all returned HTTP 400 from Puter's API:
+        //   1. type:"file" + puter_path  (Puter file-reference format)
+        //   2. type:"image_url" + base64 data URL inside a ChatMessage[]
+        //   3. type:"image_url" + base64 inside a structured messages array
         //
-        // We tried type:"file"+puter_path (Puter's own file-reference format)
-        // but it consistently returns HTTP 400 for PDFs on the free tier.
-        // Sending a base64 PNG avoids all server-side path resolution and works
-        // reliably with the OpenAI-compatible message format Puter exposes.
+        // Root cause: Puter's /drivers/call endpoint rejects structured
+        // ChatMessage[] payloads on the free tier for Claude models.
+        //
+        // Solution: send a single plain-string prompt.
+        //   • puter.ai.chat(string, options) is the simplest supported call.
+        //   • The resume text (extracted from the PDF by pdfjs-dist) is embedded
+        //     directly in the prompt string, so Claude receives the actual
+        //     characters from every page — better than reading from a screenshot.
         try {
-            const blob = await puter.fs.read(imagePath);
-
-            // Convert Blob → base64 data URL via FileReader
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(blob);
-            });
+            const prompt = `${message}\n\n---\nRESUME CONTENT:\n${resumeContent}`;
 
             return await puter.ai.chat(
-                [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "image_url",
-                                image_url: { url: dataUrl },
-                            },
-                            {
-                                type: "text",
-                                text: message,
-                            },
-                        ],
-                    },
-                ],
+                prompt,
                 { model: "claude-3-5-sonnet" }
             ) as Promise<AIResponse | undefined>;
         } catch (err) {

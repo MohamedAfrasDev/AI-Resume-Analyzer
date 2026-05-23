@@ -4,7 +4,7 @@ import { useState } from 'react';
 import FileUploader from "~/components/FileUploader";
 import { usePuterStore } from "~/lib/puter";
 import { useNavigate } from "react-router";
-import { convertPdfToImage } from "~/lib/pdf2img";
+import { convertPdfToImage, extractPdfText } from "~/lib/pdf2img";
 import { generateUUID } from "~/lib/utils";
 import { prepareInstructions } from "../../constants";
 
@@ -67,11 +67,17 @@ const Upload = () => {
             };
             await kv.set(`resume:${uuid}`, JSON.stringify(data));
 
+            setStatusText('Extracting resume text...');
+            const resumeText = await extractPdfText(file);
+            if (!resumeText.trim()) {
+                setStatusText('Error: Could not extract text from this PDF. It may be a scanned image — please try a text-based PDF.');
+                setIsProcessing(false);
+                return;
+            }
+
             setStatusText('Analyzing...');
-            // Pass the PNG thumbnail path — feedback() reads it back from
-            // Puter FS and sends it as a base64 image_url to the AI.
             const feedback = await ai.feedback(
-                uploadedImage.path,
+                resumeText,
                 prepareInstructions({ jobTitle, jobDescription })
             );
             if (!feedback) {
