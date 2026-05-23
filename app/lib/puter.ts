@@ -334,24 +334,34 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             return;
         }
 
-        return puter.ai.chat(
-            [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "file",
-                            puter_path: path,
-                        },
-                        {
-                            type: "text",
-                            text: message,
-                        },
-                    ],
-                },
-            ],
-            { model: "claude-3-7-sonnet" }
-        ) as Promise<AIResponse | undefined>;
+        // "claude-3-5-sonnet" is the alias Puter's AI router recognises.
+        // "claude-3-7-sonnet" was returning 400 because that alias is either
+        // not registered or not available on the free tier.
+        try {
+            return await puter.ai.chat(
+                [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "file",
+                                puter_path: path,
+                            },
+                            {
+                                type: "text",
+                                text: message,
+                            },
+                        ],
+                    },
+                ],
+                { model: "claude-3-5-sonnet" }
+            ) as Promise<AIResponse | undefined>;
+        } catch (err) {
+            // Surface the real error (e.g. "model not found", quota exceeded)
+            // so it appears in the upload page status text instead of a generic failure.
+            const msg = err instanceof Error ? err.message : String(err);
+            throw new Error(`Puter AI error: ${msg}`);
+        }
     };
 
     const img2txt = async (image: string | File | Blob, testMode?: boolean) => {
